@@ -4,7 +4,6 @@ from spotipy.oauth2 import SpotifyOAuth
 import spotipy
 import os
 import time
-import pprint
 
 
 def main():    
@@ -36,7 +35,7 @@ class Looper:
         return track, startTime, loopTime
 
     def getChosenTrack(self):
-        while(True):
+        while True:
             trackQuery = input("Enter song name: ")
             queryResult = self.spotifyClient.search(q=trackQuery,
                                                     limit=self.MAX_QUERY,
@@ -48,16 +47,17 @@ class Looper:
                 return trackChoices[int(choice) - 1]
             else:
                 os.system("clear")
-   
+
+    @staticmethod
     def isValidChoice(self, choice, trackChoices):
         if not choice.isdigit():
-           return False
+            return False
         choice = int(choice)
         if choice < 1 or choice > len(trackChoices):
             return False
         return True
-            
 
+    @staticmethod
     def printTrackChoices(self, trackChoices):
         print("\n#  %-30s %-30s %-30s" % ("Track", "Artist", "Album")) 
         for i in range(len(trackChoices)):
@@ -77,10 +77,11 @@ class Looper:
                 position_ms=self.startTime * 1000
         )
 
-        while (True):
+        while True:
             time.sleep(self.loopTime)
             print("Loop!")
             self.spotifyClient.seek_track(self.startTime * 1000)
+
 
 if __name__ == "__main__":
     main()
