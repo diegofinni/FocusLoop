@@ -2,30 +2,86 @@
 
 from spotipy.oauth2 import SpotifyOAuth
 import spotipy
+import os
 import time
 import pprint
 
-scope = "user-read-playback-state,user-modify-playback-state"
-spotifyClient = spotipy.Spotify(client_credentials_manager=SpotifyOAuth(scope=scope))
 
-songName = input("Enter song name: ")
-startTime = int(input("Enter loop start time: "))
-endTime = int(input("Enter loop end time: "))
-loopTime = endTime - startTime
+def main():    
+    os.system("clear")
+    Looper().start()
 
-result = spotifyClient.search(q=songName,
-                   limit=1,
-                   type="track")
 
-songURI = result["tracks"]["items"][0]["uri"]
+class Looper:
 
-spotifyClient.start_playback(
-    uris=[songURI],
-    position_ms=startTime * 1000
-)
+    MAX_QUERY = 5
 
-while (True):
-    time.sleep(loopTime)
-    print("Loop!")
-    spotifyClient.seek_track(startTime * 1000)
+    def __init__(self):
+        self.spotifyClient = self.initSpotify()
+        inputs = self.getUserInput()
+        self.track = inputs[0]
+        self.startTime = inputs[1]
+        self.loopTime = inputs[2]
+
+    def initSpotify(self):
+        scope = "user-read-playback-state,user-modify-playback-state"
+        return spotipy.Spotify(client_credentials_manager=
+                               SpotifyOAuth(scope=scope))
+
+    def getUserInput(self):
+        track = self.getChosenTrack()
+        startTime = int(input("Enter loop start time: "))
+        endTime = int(input("Enter loop end time: "))
+        loopTime = endTime - startTime
+        return track, startTime, loopTime
+
+    def getChosenTrack(self):
+        while(True):
+            trackQuery = input("Enter song name: ")
+            queryResult = self.spotifyClient.search(q=trackQuery,
+                                                    limit=self.MAX_QUERY,
+                                                    type="track")
+            trackChoices = queryResult["tracks"]["items"]
+            self.printTrackChoices(trackChoices)
+            choice = input("Enter desired track number: ")
+            if self.isValidChoice(choice, trackChoices):
+                return trackChoices[int(choice) - 1]
+            else:
+                os.system("clear")
+   
+    def isValidChoice(self, choice, trackChoices):
+        if not choice.isdigit():
+           return False
+        choice = int(choice)
+        if choice < 1 or choice > len(trackChoices):
+            return False
+        return True
+            
+
+    def printTrackChoices(self, trackChoices):
+        print("\n#  %-30s %-30s %-30s" % ("Track", "Artist", "Album")) 
+        for i in range(len(trackChoices)):
+            trackData = trackChoices[i]
+            track = trackData["name"]
+            album = trackData["album"]["name"]
+            artist = trackData["artists"][0]["name"]
+            print("%d. %-30s %-30s %-30s" % (i + 1, track[:27], artist[:27], album[:27]))
+        print("")
+
+    def start(self):
+        print("\nFocusLoop starting, enjoy!\n")
+
+        songURI = self.track["uri"]
+        self.spotifyClient.start_playback(
+                uris=[songURI],
+                position_ms=self.startTime * 1000
+        )
+
+        while (True):
+            time.sleep(self.loopTime)
+            print("Loop!")
+            self.spotifyClient.seek_track(self.startTime * 1000)
+
+if __name__ == "__main__":
+    main()
 
