@@ -4,7 +4,7 @@ from spotipy.oauth2 import SpotifyOAuth
 import spotipy
 import os
 import time
-
+import pprint
 
 def main():    
     os.system("clear")
@@ -14,6 +14,7 @@ def main():
 class Looper:
 
     MAX_QUERY = 5
+    MAX_WIDTH = 27
 
     def __init__(self):
         self.spotifyClient = self.initSpotify()
@@ -29,9 +30,20 @@ class Looper:
 
     def getUserInput(self):
         track = self.getChosenTrack()
-        startTime = int(input("Enter loop start time: "))
-        endTime = int(input("Enter loop end time: "))
-        loopTime = endTime - startTime
+        maxTime = int(track["duration_ms"]) / 1000
+        
+        startTime = -1
+        while startTime < 0 or startTime > maxTime:
+            startTime = int(input("Enter valid loop start time: "))
+        
+        endTime = -1
+        while endTime < 0 or endTime > maxTime:
+            endTime = int(input("Enter valid loop end time: "))
+        
+        if endTime > startTime:
+            loopTime = endTime - startTime
+        else:
+            loopTime = maxTime - startTime + endTime
         return track, startTime, loopTime
 
     def getChosenTrack(self):
@@ -48,7 +60,6 @@ class Looper:
             else:
                 os.system("clear")
 
-    @staticmethod
     def isValidChoice(self, choice, trackChoices):
         if not choice.isdigit():
             return False
@@ -57,15 +68,14 @@ class Looper:
             return False
         return True
 
-    @staticmethod
     def printTrackChoices(self, trackChoices):
         print("\n#  %-30s %-30s %-30s" % ("Track", "Artist", "Album")) 
         for i in range(len(trackChoices)):
             trackData = trackChoices[i]
-            track = trackData["name"]
-            album = trackData["album"]["name"]
-            artist = trackData["artists"][0]["name"]
-            print("%d. %-30s %-30s %-30s" % (i + 1, track[:27], artist[:27], album[:27]))
+            track = trackData["name"][:self.MAX_WIDTH]
+            album = trackData["album"]["name"][:self.MAX_WIDTH]
+            artist = trackData["artists"][0]["name"][:self.MAX_WIDTH]
+            print("%d. %-30s %-30s %-30s" % (i + 1, track, artist, album))
         print("")
 
     def start(self):
@@ -76,7 +86,8 @@ class Looper:
                 uris=[songURI],
                 position_ms=self.startTime * 1000
         )
-
+        self.spotifyClient.repeat(songURI)
+        exit(1)
         while True:
             time.sleep(self.loopTime)
             print("Loop!")
